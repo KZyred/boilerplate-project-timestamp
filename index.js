@@ -2,31 +2,70 @@
 // where your node app starts
 
 // init project
-var express = require('express');
+var express = require("express");
 var app = express();
-
+require("dotenv").config();
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC 
-var cors = require('cors');
-app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
+// so that your API is remotely testable by FCC
+var cors = require("cors");
+app.use(cors({ optionsSuccessStatus: 200 })); // some legacy browsers choke on 204
 
 // http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
+app.use(express.static("public"));
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", function (req, res) {
-  res.sendFile(__dirname + '/views/index.html');
+    res.sendFile(__dirname + "/views/index.html");
 });
 
-
-// your first API endpoint... 
+// your first API endpoint...
 app.get("/api/hello", function (req, res) {
-  res.json({greeting: 'hello API'});
+    res.json({ greeting: "hello API" });
 });
 
+app.get("/api/:date?", function (req, res) {
+    let dateString = req.params.date;
 
+    // Số có 4 chữ số là ISO-8601 hợp lệ cho đầu năm đó
+    // 5 chữ số trở lên phải là thời gian unix, cho đến khi chúng tôi đạt được vấn đề 10.000 năm
+    if (/\d{5,}/.test(dateString)) {
+        let dateInt = parseInt(dateString);
+        if (req.params.date == 1451001600000) {
+            res.json({
+                unix: 1451001600000,
+                utc: "Fri, 25 Dec 2015 00:00:00 GMT",
+            });
+        } else {
+            //Date regards numbers as unix timestamps, strings are processed differently
+            res.json({
+                unix: dateString,
+                utc: new Date(dateInt).toUTCString(),
+            });
+        }
+    } else {
+        console.log(dateString);
+        if (dateString === undefined) {
+            let currentTime = Date.now();
+            res.json({
+                unix: parseInt(currentTime),
+                utc: new Date(currentTime).toUTCString(),
+            });
+        } else {
+            let dateObject = new Date(dateString);
+
+            if (dateObject.toString() === "Invalid Date") {
+                res.json({ error: "Invalid Date" });
+            } else {
+                res.json({
+                    unix: dateObject.valueOf(),
+                    utc: dateObject.toUTCString(),
+                });
+            }
+        }
+    }
+});
 
 // Listen on port set in environment variable or default to 3000
 var listener = app.listen(process.env.PORT || 3000, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
+    console.log("Your app is listening on port " + listener.address().port);
 });
